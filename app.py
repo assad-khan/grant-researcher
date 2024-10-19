@@ -7,6 +7,8 @@ from crewai_tools import (
     ScrapeWebsiteTool,
 )
 import io
+import sys
+import re
 
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 os.environ["SERPER_API_KEY"] =os.getenv("SERPER_API_KEY")
@@ -16,6 +18,29 @@ llm = ChatOpenAI(model_name="gpt-4o-mini")
 
 # Define tools
 tools = [SerperDevTool(), ScrapeWebsiteTool()]
+
+class StreamToExpander:
+    def __init__(self, expander, buffer_limit=10000):
+        self.expander = expander
+        self.buffer = []
+        self.buffer_limit = buffer_limit
+
+    def write(self, data):
+        # Clean ANSI escape codes from output
+        cleaned_data = re.sub(r'\x1B\[\d+;?\d*m', '', data)
+        if len(self.buffer) >= self.buffer_limit:
+            self.buffer.pop(0)
+        self.buffer.append(cleaned_data)
+
+        if "\n" in data:
+            self.expander.markdown(''.join(self.buffer), unsafe_allow_html=True)
+            self.buffer.clear()
+
+    def flush(self):
+        if self.buffer:
+            self.expander.markdown(''.join(self.buffer), unsafe_allow_html=True)
+            self.buffer.clear()
+
 
 def create_agents(llm):
     """Creates and returns agents with predefined roles and goals."""
@@ -33,7 +58,7 @@ def create_agents(llm):
             role='Grant Analyzer',
             goal='Analyze grant requirements and organizational fit',
             backstory="You are an expert in analyzing grant requirements and assessing organizational eligibility.",
-            tools=[SerperDevTool()],
+            tools=tools,
             verbose=True,
             llm=llm
         )
@@ -115,6 +140,8 @@ def main():
     websites = st.text_area("Enter specific website links for grant search (optional, one per line)")
 
     if st.button("Start Grant Research and Writing Process"):
+        process_output_expander = st.expander("Processing Output:")
+        sys.stdout = StreamToExpander(process_output_expander)
         if org_name and org_mission and project_description and funding_amount:
             input_data = {
                 "organization": org_name,
