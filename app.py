@@ -115,18 +115,19 @@ def run_grant_process(grant_crew, input_data):
 def generate_download_link(result):
     """Generates a download link for the result in .txt format."""
     try:
+        # Convert result to string
         result_str = str(result)
-        buffer = io.StringIO(result_str)
-        buffer.seek(0)
 
+        # Use st.download_button with the string directly
         st.download_button(
             label="Download Results",
-            data=buffer,
+            data=result_str,
             file_name="grant_results.txt",
             mime="text/plain"
         )
     except Exception as e:
         st.error(f"Error generating download link: {str(e)}")
+
 
 def main():
     # Streamlit app
