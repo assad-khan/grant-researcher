@@ -2,6 +2,7 @@ import streamlit as st
 from crewai import Agent, Task, Crew
 from langchain.chat_models import ChatOpenAI
 import os
+from docx import Document
 from crewai_tools import (
     SerperDevTool,
     ScrapeWebsiteTool,
@@ -94,7 +95,7 @@ def create_tasks(researcher, analyzer, writer):
         writing_task = Task(
             description="Write a compelling grant application for the selected grant opportunity based on the requirements and analysis. Organization: {organization}, Mission: {mission}, Project: {project}, Funding Needed: ${funding}",
             agent=writer,
-            expected_output="A draft grant application including an executive summary, project description, budget overview, expected outcomes, and any specific sections required by the grant."
+            expected_output="A comprehensive, detailed grant application draft, including an executive summary, project description, budget overview, expected outcomes, and any specific sections required by the grant guidelines."
         )
         return [research_task, analysis_task, writing_task]
     except Exception as e:
@@ -113,21 +114,39 @@ def run_grant_process(grant_crew, input_data):
         return None
 
 def generate_download_link(result):
-    """Generates a download link for the result in .txt format."""
+    """Generates a download link for the result in a Word document format."""
     try:
-        # Convert result to string
-        result_str = str(result)
+        from docx import Document  # Ensure docx is imported within the function
 
-        # Use st.download_button with the string directly
+        # Create a Word document
+        doc = Document()
+        doc.add_heading("Grant Research and Writing Results", level=1)
+
+        # Check if `result` is structured as a dictionary or a list
+        if isinstance(result, dict):
+            for section, content in result.items():
+                doc.add_heading(section, level=2)
+                doc.add_paragraph(str(content))  # Ensure content is a string
+        elif isinstance(result, (list, tuple)):
+            for item in result:
+                doc.add_paragraph(str(item))  # Convert each item to a string if needed
+        else:
+            doc.add_paragraph(str(result))  # Ensure `result` is a string if it’s a single output
+
+        # Save document to an in-memory file
+        buffer = io.BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+
+        # Provide download link for Word document
         st.download_button(
-            label="Download Results",
-            data=result_str,
-            file_name="grant_results.txt",
-            mime="text/plain"
+            label="Download Results as Word Document",
+            data=buffer,
+            file_name="grant_results.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
     except Exception as e:
         st.error(f"Error generating download link: {str(e)}")
-
 
 def main():
     # Streamlit app
@@ -162,7 +181,7 @@ def main():
                 result = run_grant_process(grant_crew, input_data)
                 if result:
                     st.subheader("Grant Research and Writing Results")
-                    st.write(result)
+                    st.markdown(result)
 
                     # Provide file download option
                     generate_download_link(result)
