@@ -83,19 +83,19 @@ def create_tasks(researcher, analyzer, writer):
         research_task = Task(
             description="Research and identify suitable grants based on the organization's profile and needs. Organization: {organization}, Mission: {mission}, Project: {project}, Funding Needed: ${funding}. Use the provided website links: {websites} if available, otherwise search randomly.",
             agent=researcher,
-            expected_output="A list of at least 3 potential grants with their names, funding amounts, brief descriptions, website links, and application deadlines."
+            expected_output="A list of at least 3 potential grants with their names, funding amounts, brief descriptions, website links, and application deadlines. Also give a list of Grant Websites Direct URL to grant opportunity"
         )
 
         analysis_task = Task(
             description="Analyze the identified grants for eligibility and fit with the organization. Also, find and analyze similar successful grant applications from the web. Organization: {organization}, Mission: {mission}, Project: {project}, Funding Needed: ${funding}",
             agent=analyzer,
-            expected_output="A detailed analysis of each grant, including eligibility criteria, alignment with organization goals, probability of success, and insights from similar successful applications."
+            expected_output="A detailed analysis of each grant, including eligibility criteria, alignment with organization goals, probability of success, and insights from similar successful applications. Also Grant Application Reference Websites URLs of successful grant application examples"
         )
 
         writing_task = Task(
             description="Write a compelling grant application for the selected grant opportunity based on the requirements and analysis. Organization: {organization}, Mission: {mission}, Project: {project}, Funding Needed: ${funding}",
             agent=writer,
-            expected_output="A comprehensive, detailed grant application draft, including an executive summary, project description, budget overview, expected outcomes, and any specific sections required by the grant guidelines."
+            expected_output="A comprehensive, detailed grant application draft, including an executive summary, project description, budget overview, expected outcomes, and any specific sections required by the grant guidelines. Also Source Links (URLs) of the target grant"
         )
         return [research_task, analysis_task, writing_task]
     except Exception as e:
